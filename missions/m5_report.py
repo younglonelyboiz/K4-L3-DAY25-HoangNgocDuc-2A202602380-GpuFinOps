@@ -52,12 +52,17 @@ def run(verbose: bool = True) -> dict:
         "best_region": min(sustainability.REGION_CARBON, key=sustainability.REGION_CARBON.get),
     }
 
-    md = report.build_report(baseline, optimized, levers, sustainability=sust)
+    exts = {
+        "cache": r2.get("cache_analysis", {}),
+        "carbon": r3.get("carbon_scheduling", {}),
+    }
+    md = report.build_report(baseline, optimized, levers, sustainability=sust, extensions=exts)
     out_md = os.path.join(ROOT, "outputs", "report.md")
     os.makedirs(os.path.dirname(out_md), exist_ok=True)
     with open(out_md, "w") as f:
         f.write(md)
     png = report.savings_waterfall(levers, os.path.join(ROOT, "outputs", "savings.png"))
+
 
     if verbose:
         print("== M5 Optimization Report ==")

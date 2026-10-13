@@ -102,3 +102,40 @@ def spot_checkpoint_cost(
         "on_demand_cost": round(on_demand_cost, 2),
         "savings_pct": round(savings_pct, 1),
     }
+
+
+def cache_break_even_reads(
+    write_cost_per_m: float,
+    read_discount: float = 0.10,
+    price_in_per_m: float = 3.0,
+) -> float:
+    """Number of cache reads required to break even on cache creation/write cost.
+
+    Each cached read costs (read_discount x price_in_per_m), saving
+    (1 - read_discount) x price_in_per_m compared to uncached input.
+    """
+    savings_per_read = price_in_per_m * (1.0 - read_discount)
+    if savings_per_read <= 0:
+        return float("inf")
+    return write_cost_per_m / savings_per_read
+
+
+def cache_is_worth_it(
+    avg_cache_reads: float,
+    write_cost_per_m: float,
+    read_discount: float = 0.10,
+    price_in_per_m: float = 3.0,
+) -> bool:
+    """True if expected savings across cache reads exceed the cache creation/write cost.
+
+    Example:
+      For large model ($3.00/1M in, read_discount=0.10):
+      Savings per read = $2.70 / 1M cached tokens.
+      With write_cost_per_m = $3.75, break-even is ~1.39 reads.
+      If avg_cache_reads >= 2, returns True.
+    """
+    savings_per_read = price_in_per_m * (1.0 - read_discount)
+    if savings_per_read <= 0:
+        return False
+    return (avg_cache_reads * savings_per_read) > write_cost_per_m
+
